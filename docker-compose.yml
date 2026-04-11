@@ -49,7 +49,7 @@ services:
       AGENT_ALLOWED_TOOLS: ${AGENT_ALLOWED_TOOLS:-Bash,Read,Write,Edit,Glob,Grep,WebFetch,WebSearch,Agent}
     volumes:
       - shared-files:/shared-files
-      - dot-claude:/home/claude/.claude
+      - ./dot-claude:/home/claude/.claude:ro
       - agent-workspace:/workspace
     networks:
       - claude-net
@@ -57,7 +57,6 @@ services:
 
 volumes:
   shared-files:
-  dot-claude:
   agent-workspace:
   conversations:
 
