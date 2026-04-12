@@ -16,10 +16,8 @@ const bot = new TelegramBot(TOKEN, {
   baseApiUrl: API_BASE,
 });
 
-// Track session IDs and message counts per chat
-const chatSessions = new Map(); // chatId -> { sessionId, messageCount }
-// Serialize requests per chat
-const chatQueues = new Map(); // chatId -> Promise chain
+const chatSessions = new Map();
+const chatQueues = new Map();
 
 function getSession(chatId) {
   if (!chatSessions.has(chatId)) {
@@ -28,7 +26,56 @@ function getSession(chatId) {
   return chatSessions.get(chatId);
 }
 
-function runClaude(chatId, prompt) {
+class LiveMessage {
+  constructor(bot, chatId) {
+    this.bot = bot;
+    this.chatId = chatId;
+    this.messageId = null;
+    this.text = "";
+    this.pendingEdit = null;
+    this.editDelay = 600;
+  }
+
+  async append(line) {
+    if (this.text.length + line.length + 1 > 4000 && this.messageId) {
+      await this.flush();
+      this.messageId = null;
+      this.text = "";
+    }
+    this.text += (this.text ? "\n" : "") + line;
+    this.scheduleEdit();
+  }
+
+  scheduleEdit() {
+    if (this.pendingEdit) return;
+    this.pendingEdit = setTimeout(() => this.flush(), this.editDelay);
+  }
+
+  async flush() {
+    if (this.pendingEdit) {
+      clearTimeout(this.pendingEdit);
+      this.pendingEdit = null;
+    }
+    if (!this.text) return;
+    try {
+      if (!this.messageId) {
+        const sent = await this.bot.sendMessage(this.chatId, this.text);
+        this.messageId = sent.message_id;
+      } else {
+        await this.bot.editMessageText(this.text, {
+          chat_id: this.chatId,
+          message_id: this.messageId,
+        });
+      }
+    } catch (err) {
+      if (!err.message?.includes("message is not modified")) {
+        console.error("Telegram edit error:", err.message);
+      }
+    }
+  }
+}
+
+function runClaude(chatId, prompt, liveMsg) {
   const session = getSession(chatId);
   const isFirst = session.messageCount === 0;
   session.messageCount++;
@@ -61,9 +108,9 @@ function runClaude(chatId, prompt) {
     });
 
     let buffer = "";
-    let thinkingParts = [];
-    let toolParts = [];
     let resultText = "";
+    // Track which content blocks we've already reported (by index within a message)
+    const seenBlocks = new Set();
 
     proc.stdout.on("data", (chunk) => {
       buffer += chunk.toString();
@@ -75,15 +122,42 @@ function runClaude(chatId, prompt) {
         try {
           const evt = JSON.parse(line);
 
-          if (evt.type === "assistant" && evt.subtype === "thinking") {
-            thinkingParts.push(evt.content || "");
-          } else if (evt.type === "assistant" && evt.subtype === "tool_use") {
-            const name = evt.tool_name || evt.name || "tool";
-            const input = evt.input
-              ? JSON.stringify(evt.input).slice(0, 200)
-              : "";
-            toolParts.push(`${name}: ${input}`);
-          } else if (evt.type === "result") {
+          // assistant events have message.content[] with thinking, tool_use, text blocks
+          if (evt.type === "assistant" && evt.message?.content) {
+            for (const block of evt.message.content) {
+              // Deduplicate — same message can appear multiple times as content grows
+              const key = `${evt.message.id}:${block.type}:${block.id || block.thinking?.slice(0, 40) || ""}`;
+
+              if (block.type === "thinking" && block.thinking && !seenBlocks.has(key)) {
+                seenBlocks.add(key);
+                const snippet = block.thinking.trim().slice(0, 300);
+                if (snippet) liveMsg.append(`💭 ${snippet}`);
+              }
+
+              if (block.type === "tool_use" && !seenBlocks.has(key)) {
+                seenBlocks.add(key);
+                let summary = `🔧 ${block.name}`;
+                const input = block.input || {};
+                if (input.command) summary += `: ${input.command.slice(0, 150)}`;
+                else if (input.file_path) summary += `: ${input.file_path}`;
+                else if (input.pattern) summary += `: ${input.pattern}`;
+                else if (input.query) summary += `: ${input.query.slice(0, 150)}`;
+                liveMsg.append(summary);
+              }
+            }
+          }
+
+          // tool results come as type: "user" with tool_result content
+          if (evt.type === "user" && evt.message?.content) {
+            for (const block of evt.message.content) {
+              if (block.type === "tool_result" && typeof block.content === "string") {
+                const preview = block.content.trim().slice(0, 200);
+                if (preview) liveMsg.append(`  ↳ ${preview}${block.content.length > 200 ? "…" : ""}`);
+              }
+            }
+          }
+
+          if (evt.type === "result") {
             resultText = evt.result || "";
           }
         } catch {}
@@ -94,10 +168,7 @@ function runClaude(chatId, prompt) {
       console.error("claude stderr:", chunk.toString());
     });
 
-    proc.on("close", (code) => {
-      resolve({ thinkingParts, toolParts, resultText });
-    });
-
+    proc.on("close", () => resolve(resultText));
     proc.on("error", reject);
   });
 }
@@ -113,13 +184,12 @@ bot.on("message", async (msg) => {
   const chatId = msg.chat.id;
   const userId = String(msg.from.id);
 
-  if (ALLOWED?.length && !ALLOWED.includes(userId)) {
+  if (ALLOWED.length && !ALLOWED.includes(userId)) {
     return bot.sendMessage(chatId, "Unauthorized.");
   }
 
   let prompt = "";
 
-  // Check for files
   const file =
     msg.document ||
     (msg.photo && msg.photo[msg.photo.length - 1]) ||
@@ -158,7 +228,6 @@ bot.on("message", async (msg) => {
     return;
   }
 
-  // Queue per chat so messages don't overlap
   enqueue(chatId, async () => {
     const typingInterval = setInterval(
       () => bot.sendChatAction(chatId, "typing"),
@@ -167,28 +236,10 @@ bot.on("message", async (msg) => {
     bot.sendChatAction(chatId, "typing");
 
     try {
-      const { thinkingParts, toolParts, resultText } = await runClaude(
-        chatId,
-        prompt
-      );
+      const liveMsg = new LiveMessage(bot, chatId);
+      const resultText = await runClaude(chatId, prompt, liveMsg);
+      await liveMsg.flush();
 
-      // Message 1: thinking + tool calls
-      let meta = "";
-      if (thinkingParts.length > 0) {
-        const thinking = thinkingParts.join("\n").slice(0, 3500);
-        meta += `💭 Thinking:\n\n${thinking}\n`;
-      }
-      if (toolParts.length > 0) {
-        meta += `\n🔧 Tools:\n${toolParts.map((t) => `• ${t}`).join("\n")}`;
-      }
-
-      if (meta) {
-        for (const chunk of splitMsg(meta)) {
-          await bot.sendMessage(chatId, chunk).catch(console.error);
-        }
-      }
-
-      // Message 2: final response
       if (resultText) {
         for (const chunk of splitMsg(resultText)) {
           await bot

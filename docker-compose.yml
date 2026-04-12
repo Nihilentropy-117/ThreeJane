@@ -18,8 +18,23 @@ services:
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
       ALLOWED_USER_IDS: ${ALLOWED_USER_IDS:-}
       TELEGRAM_API_BASE: http://telegram-bot-api:8081
+      TODOIST_API_KEY: ${TODOIST_API_KEY:-}
       IS_SANDBOX: 1
     volumes:
       - ./telegram-files:/app/telegram-files
       - ./dot-claude:/app/.claude
       - ./workspace:/app/workspace
+      - ./venv:/venv
+      - ./obsidian-vaults:/user-files/obsidian
+  obsidian-sync:
+    build: ./obsidian-headless
+    container_name: obsidian-headless
+    restart: unless-stopped
+    environment:
+      OB_EMAIL: ${OB_EMAIL}
+      OB_PASSWORD: ${OB_PASSWORD}
+      OB_VAULTS: ${OB_VAULTS}
+      OB_E2EE_PASSWORD: ${OB_E2EE_PASSWORD:-}
+      OB_SYNC_MODE: ${OB_SYNC_MODE:-bidirectional}
+    volumes:
+      - ./obsidian-vaults:/vaults

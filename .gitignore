@@ -3,3 +3,5 @@ node_modules/
 telegram-files/
 dot-claude/
 workspace/
+venv/
+obsidian-vaults/
