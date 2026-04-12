@@ -1,7 +1,8 @@
 .env
 node_modules/
 telegram-files/
-dot-claude/
+dot-claude/*
+!dot-claude/skills/
 workspace/
 venv/
 obsidian-vaults/
