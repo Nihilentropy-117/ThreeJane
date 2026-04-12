@@ -1,8 +1,5 @@
 .env
-__pycache__/
-*.pyc
-*.pyo
-*.pyd
-*.sqlite3
-*.db
-.DS_Store
+node_modules/
+telegram-files/
+dot-claude/
+workspace/
