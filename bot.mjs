@@ -75,7 +75,7 @@ class LiveMessage {
   }
 }
 
-function runClaude(chatId, prompt, liveMsg) {
+function runClaude(chatId, prompt, liveMsg, imagePath = null) {
   const session = getSession(chatId);
   const isFirst = session.messageCount === 0;
   session.messageCount++;
@@ -92,6 +92,10 @@ function runClaude(chatId, prompt, liveMsg) {
     args.push("--session-id", session.sessionId);
   } else {
     args.push("--resume", session.sessionId);
+  }
+
+  if (imagePath) {
+    args.push("--image", imagePath);
   }
 
   args.push(prompt);
@@ -197,17 +201,22 @@ bot.on("message", async (msg) => {
     msg.audio ||
     msg.voice;
 
+  let imagePathForClaude = null;
+
   if (file) {
     const fileId = file.file_id;
     try {
       const localPath = await bot.downloadFile(fileId, FILES_DIR);
-      const relPath = localPath.startsWith("/app/")
-        ? "." + localPath.slice(4)
-        : localPath;
       const caption = msg.caption || "";
-      prompt = caption
-        ? `${caption}\n\n--- User Sent File: ${relPath}`
-        : `--- User Sent File: ${relPath}`;
+      if (msg.photo) {
+        // Pass photos as vision input via --image flag
+        imagePathForClaude = localPath;
+        prompt = caption || "What's in this image?";
+      } else {
+        prompt = caption
+          ? `${caption}\n\n--- User Sent File: ${localPath}`
+          : `--- User Sent File: ${localPath}`;
+      }
     } catch (err) {
       console.error("Download error:", err);
       return bot.sendMessage(chatId, "Failed to download file.");
@@ -237,7 +246,7 @@ bot.on("message", async (msg) => {
 
     try {
       const liveMsg = new LiveMessage(bot, chatId);
-      const resultText = await runClaude(chatId, prompt, liveMsg);
+      const resultText = await runClaude(chatId, prompt, liveMsg, imagePathForClaude);
       await liveMsg.flush();
 
       if (resultText) {
