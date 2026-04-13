@@ -25,7 +25,9 @@ services:
       - ./workspace:/app/workspace
       - ./venv:/venv
       - ./obsidian-vaults:/user-files/obsidian
-  obsidian-sync:
+
+
+    obsidian-sync:
     build: ./obsidian-headless
     container_name: obsidian-headless
     restart: unless-stopped

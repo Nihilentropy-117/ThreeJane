@@ -75,7 +75,7 @@ class LiveMessage {
   }
 }
 
-function runClaude(chatId, prompt, liveMsg, imagePath = null) {
+function runClaude(chatId, prompt, liveMsg) {
   const session = getSession(chatId);
   const isFirst = session.messageCount === 0;
   session.messageCount++;
@@ -92,10 +92,6 @@ function runClaude(chatId, prompt, liveMsg, imagePath = null) {
     args.push("--session-id", session.sessionId);
   } else {
     args.push("--resume", session.sessionId);
-  }
-
-  if (imagePath) {
-    args.push("--image", imagePath);
   }
 
   args.push(prompt);
@@ -201,17 +197,20 @@ bot.on("message", async (msg) => {
     msg.audio ||
     msg.voice;
 
-  let imagePathForClaude = null;
-
   if (file) {
     const fileId = file.file_id;
     try {
-      const localPath = await bot.downloadFile(fileId, FILES_DIR);
+      // With a local Bot API server, files are stored on disk under
+      // <data_dir>/<token>/<type>/. Use getFile to get the relative path,
+      // then resolve it against the local files directory + token.
+      const fileInfo = await bot.getFile(fileId);
+      const localPath = `${FILES_DIR}/${TOKEN}/${fileInfo.file_path}`;
       const caption = msg.caption || "";
       if (msg.photo) {
-        // Pass photos as vision input via --image flag
-        imagePathForClaude = localPath;
-        prompt = caption || "What's in this image?";
+        // Claude Code reads images via its Read tool when given a file path
+        prompt = caption
+          ? `${caption}\n\n--- User Sent Photo: ${localPath}`
+          : `What's in this image?\n\n--- User Sent Photo: ${localPath}`;
       } else {
         prompt = caption
           ? `${caption}\n\n--- User Sent File: ${localPath}`
@@ -246,7 +245,7 @@ bot.on("message", async (msg) => {
 
     try {
       const liveMsg = new LiveMessage(bot, chatId);
-      const resultText = await runClaude(chatId, prompt, liveMsg, imagePathForClaude);
+      const resultText = await runClaude(chatId, prompt, liveMsg);
       await liveMsg.flush();
 
       if (resultText) {
