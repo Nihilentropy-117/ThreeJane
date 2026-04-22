@@ -3,6 +3,7 @@ node_modules/
 telegram-files/
 dot-claude/*
 !dot-claude/skills/
+dot-claude.json
 workspace/
 venv/
 obsidian-vaults/

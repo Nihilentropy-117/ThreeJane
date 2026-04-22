@@ -19,12 +19,15 @@ services:
       TELEGRAM_API_BASE: http://telegram-bot-api:8081
       TODOIST_API_KEY: ${TODOIST_API_KEY:-}
       IS_SANDBOX: 1
+      HOME: /app
     volumes:
       - ./telegram-files:/app/telegram-files
       - ./dot-claude:/app/.claude
+      - ./dot-claude.json:/app/.claude.json
       - ./workspace:/app/workspace
       - ./venv:/venv
       - ./obsidian-vaults:/user-files/obsidian
+      - ./claude-code-router:/app/.claude-code-router
   obsidian-sync:
     build: ./obsidian-headless
     container_name: obsidian-headless

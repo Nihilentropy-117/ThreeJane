@@ -1,0 +1,27 @@
+{"level":30,"time":1776835640706,"pid":32,"hostname":"ad961562ec18","msg":"register transformer: Anthropic (endpoint: /v1/messages)"}
+{"level":30,"time":1776835640707,"pid":32,"hostname":"ad961562ec18","msg":"register transformer: gemini (endpoint: /v1beta/models/:modelAndAction)"}
+{"level":30,"time":1776835640707,"pid":32,"hostname":"ad961562ec18","msg":"register transformer: vertex-gemini (no endpoint)"}
+{"level":30,"time":1776835640707,"pid":32,"hostname":"ad961562ec18","msg":"register transformer: vertex-claude (no endpoint)"}
+{"level":30,"time":1776835640707,"pid":32,"hostname":"ad961562ec18","msg":"register transformer: deepseek (no endpoint)"}
+{"level":30,"time":1776835640707,"pid":32,"hostname":"ad961562ec18","msg":"register transformer: tooluse (no endpoint)"}
+{"level":30,"time":1776835640707,"pid":32,"hostname":"ad961562ec18","msg":"register transformer: openrouter (no endpoint)"}
+{"level":30,"time":1776835640707,"pid":32,"hostname":"ad961562ec18","msg":"register transformer: OpenAI (endpoint: /v1/chat/completions)"}
+{"level":30,"time":1776835640707,"pid":32,"hostname":"ad961562ec18","msg":"register transformer: maxtoken (no endpoint)"}
+{"level":30,"time":1776835640708,"pid":32,"hostname":"ad961562ec18","msg":"register transformer: groq (no endpoint)"}
+{"level":30,"time":1776835640708,"pid":32,"hostname":"ad961562ec18","msg":"register transformer: cleancache (no endpoint)"}
+{"level":30,"time":1776835640708,"pid":32,"hostname":"ad961562ec18","msg":"register transformer: enhancetool (no endpoint)"}
+{"level":30,"time":1776835640708,"pid":32,"hostname":"ad961562ec18","msg":"register transformer: reasoning (no endpoint)"}
+{"level":30,"time":1776835640708,"pid":32,"hostname":"ad961562ec18","msg":"register transformer: sampling (no endpoint)"}
+{"level":30,"time":1776835640708,"pid":32,"hostname":"ad961562ec18","msg":"register transformer: maxcompletiontokens (no endpoint)"}
+{"level":30,"time":1776835640708,"pid":32,"hostname":"ad961562ec18","msg":"register transformer: cerebras (no endpoint)"}
+{"level":30,"time":1776835640708,"pid":32,"hostname":"ad961562ec18","msg":"register transformer: streamoptions (no endpoint)"}
+{"level":30,"time":1776835640708,"pid":32,"hostname":"ad961562ec18","msg":"register transformer: customparams (no endpoint)"}
+{"level":30,"time":1776835640708,"pid":32,"hostname":"ad961562ec18","msg":"register transformer: vercel (no endpoint)"}
+{"level":30,"time":1776835640708,"pid":32,"hostname":"ad961562ec18","msg":"register transformer: openai-responses (endpoint: /v1/responses)"}
+{"level":30,"time":1776835640708,"pid":32,"hostname":"ad961562ec18","msg":"register transformer: forcereasoning (no endpoint)"}
+{"level":30,"time":1776835640804,"pid":32,"hostname":"ad961562ec18","msg":"TokenizerService initialized successfully"}
+{"level":30,"time":1776835640918,"pid":32,"hostname":"ad961562ec18","msg":"Server listening at http://127.0.0.1:3456"}
+{"level":30,"time":1776835640918,"pid":32,"hostname":"ad961562ec18","msg":"Server listening at http://172.27.0.4:3456"}
+{"level":30,"time":1776835640919,"pid":32,"hostname":"ad961562ec18","msg":"🚀 LLMs API server listening on http://127.0.0.1:3456"}
+{"level":30,"time":1776835642882,"pid":32,"hostname":"ad961562ec18","reqId":"req-1","req":{"method":"HEAD","url":"/","host":"127.0.0.1:3456","remoteAddress":"127.0.0.1","remotePort":44514},"msg":"incoming request"}
+{"level":30,"time":1776835642891,"pid":32,"hostname":"ad961562ec18","reqId":"req-1","res":{"statusCode":200},"responseTime":7.317854881286621,"msg":"request completed"}

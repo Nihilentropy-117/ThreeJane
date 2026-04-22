@@ -8,6 +8,7 @@ ENV PATH="/venv/bin:$PATH"
 
 # Install Claude Code CLI
 RUN npm install -g @anthropic-ai/claude-code
+RUN npm install -g @musistudio/claude-code-router
 
 WORKDIR /app
 
