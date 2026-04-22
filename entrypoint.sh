@@ -7,7 +7,7 @@ if [ ! -f /venv/bin/python3 ]; then
 fi
 
 
-if [ "$ccr_enable" = "true" ]; then
+if [ "$CCR_ENABLE" = "TRUE" ]; then
   # Start Claude Code Router in the background so the `claude` CLI can proxy
   # through it. Config lives at $HOME/.claude-code-router/config.json
   # (bind-mounted to ./claude-code-router).

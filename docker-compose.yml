@@ -20,6 +20,7 @@ services:
       TODOIST_API_KEY: ${TODOIST_API_KEY:-}
       IS_SANDBOX: 1
       HOME: /app
+      CCR_ENABLE: "TRUE"
     volumes:
       - ./telegram-files:/app/telegram-files
       - ./dot-claude:/app/.claude
