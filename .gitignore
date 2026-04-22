@@ -7,3 +7,4 @@ dot-claude.json
 workspace/
 venv/
 obsidian-vaults/
+claude-code-router/config.json
