@@ -21,6 +21,7 @@ services:
       IS_SANDBOX: 1
       HOME: /app
       CCR_ENABLE: "TRUE"
+      OPENROUTER_API_KEY: ${OPENROUTER_API_KEY}
     volumes:
       - ./telegram-files:/app/telegram-files
       - ./dot-claude:/app/.claude
