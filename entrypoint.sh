@@ -12,12 +12,15 @@ if [ "$CCR_ENABLE" = "TRUE" ]; then
   # through it. Config lives at $HOME/.claude-code-router/config.json
   # (bind-mounted to ./claude-code-router).
   mkdir -p "$HOME/.claude-code-router/logs"
-  if ! ccr status >/dev/null 2>&1; then
+  CCR_PORT="${CCR_PORT:-3456}"
+  # `ccr status` exits 0 even when stopped, so probe the port instead.
+  if ! (echo > "/dev/tcp/127.0.0.1/$CCR_PORT") 2>/dev/null; then
+    # Clear stale pid if any, then start.
+    rm -f "$HOME/.claude-code-router/.claude-code-router.pid"
     ccr start >/tmp/ccr.log 2>&1 &
   fi
 
   # Wait briefly for the router to accept connections.
-  CCR_PORT="${CCR_PORT:-3456}"
   for i in $(seq 1 50); do
     if (echo > "/dev/tcp/127.0.0.1/$CCR_PORT") 2>/dev/null; then
       break

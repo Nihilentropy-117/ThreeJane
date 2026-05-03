@@ -8,3 +8,4 @@ workspace/
 venv/
 obsidian-vaults/
 claude-code-router/config.json
+claude-code-router/logs/

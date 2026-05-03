@@ -20,7 +20,7 @@ services:
       TODOIST_API_KEY: ${TODOIST_API_KEY:-}
       IS_SANDBOX: 1
       HOME: /app
-      CCR_ENABLE: "TRUE"
+      CCR_ENABLE: "FALSE"
       OPENROUTER_API_KEY: ${OPENROUTER_API_KEY}
     volumes:
       - ./telegram-files:/app/telegram-files
@@ -28,7 +28,7 @@ services:
       - ./dot-claude.json:/app/.claude.json
       - ./workspace:/app/workspace
       - ./venv:/venv
-      - ./obsidian-vaults:/user-files/obsidian
+      - ./obsidian-vaults:/user-files/notes
       - ./claude-code-router:/app/.claude-code-router
   obsidian-sync:
     build: ./obsidian-headless

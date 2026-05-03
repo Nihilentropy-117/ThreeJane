@@ -18,6 +18,16 @@ const bot = new TelegramBot(TOKEN, {
 
 const chatSessions = new Map();
 const chatQueues = new Map();
+const chatProcs = new Map();
+
+const HELP_TEXT =
+  "Send me a message and I'll pass it to Claude Code.\n\n" +
+  "Commands:\n" +
+  "/start - show this help\n" +
+  "/help - show this help\n" +
+  "/reset - reset the Claude session (alias: /new)\n" +
+  "/new - start a new Claude session (alias of /reset)\n" +
+  "/stop - hard stop any currently running Claude activity";
 
 function getSession(chatId) {
   if (!chatSessions.has(chatId)) {
@@ -105,7 +115,9 @@ function runClaude(chatId, prompt, liveMsg) {
         HOME: "/app",
         CLAUDE_CONFIG_DIR: "/app/.claude",
       },
+      detached: true,
     });
+    chatProcs.set(chatId, proc);
 
     let buffer = "";
     let resultText = "";
@@ -168,8 +180,14 @@ function runClaude(chatId, prompt, liveMsg) {
       console.error("claude stderr:", chunk.toString());
     });
 
-    proc.on("close", () => resolve(resultText));
-    proc.on("error", reject);
+    proc.on("close", () => {
+      if (chatProcs.get(chatId) === proc) chatProcs.delete(chatId);
+      resolve(resultText);
+    });
+    proc.on("error", (err) => {
+      if (chatProcs.get(chatId) === proc) chatProcs.delete(chatId);
+      reject(err);
+    });
   });
 }
 
@@ -221,15 +239,25 @@ bot.on("message", async (msg) => {
       return bot.sendMessage(chatId, "Failed to download file.");
     }
   } else if (msg.text) {
-    if (msg.text === "/start") {
-      return bot.sendMessage(
-        chatId,
-        "Send me a message and I'll pass it to Claude Code."
-      );
+    if (msg.text === "/start" || msg.text === "/help") {
+      return bot.sendMessage(chatId, HELP_TEXT);
     }
-    if (msg.text === "/reset") {
+    if (msg.text === "/reset" || msg.text === "/new") {
       chatSessions.delete(chatId);
       return bot.sendMessage(chatId, "Session reset.");
+    }
+    if (msg.text === "/stop") {
+      const proc = chatProcs.get(chatId);
+      if (!proc) {
+        return bot.sendMessage(chatId, "Nothing to stop.");
+      }
+      try {
+        process.kill(-proc.pid, "SIGKILL");
+      } catch {
+        try { proc.kill("SIGKILL"); } catch {}
+      }
+      chatProcs.delete(chatId);
+      return bot.sendMessage(chatId, "Stopped.");
     }
     prompt = msg.text;
   } else {
