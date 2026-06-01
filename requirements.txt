@@ -1,0 +1,9 @@
+aiogram>=3.7,<4
+aiohttp>=3.9
+pyyaml>=6
+pexpect>=4.9
+tiktoken>=0.7
+pillow>=10
+pypdf>=4
+todoist-api-python>=3
+thefuzz>=0.22

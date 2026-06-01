@@ -1,0 +1,26 @@
+telegram:
+  bot_token: ${BOT_TOKEN}
+  api_url: http://telegram-bot-api:8081
+  allowed_user_id: ${ALLOWED_USER_ID}
+
+openrouter:
+  api_key: ${OPENROUTER_API_KEY}
+  referer: https://localhost/3jane
+  title: 3Jane
+
+# Set these to current OpenRouter model slugs (https://openrouter.ai/models).
+# The web subagent uses the OpenRouter web plugin, so any model works for it.
+models:
+  main: x-ai/grok-build-0.1
+  explore: ~anthropic/claude-sonnet-latest
+  general: ~anthropic/claude-sonnet-latest
+  web: google/gemini-3.5-flash
+
+agent:
+  token_limit: 25000          # sliding-window budget, per agent (main and each subagent)
+  inactivity_timeout: 3600    # clear memory + reset shell after this many idle seconds
+  thinking_update_interval: 10  # seconds between thinking-message updates
+
+paths:
+  actions_dir: /app/settings/Actions
+  workspace_dir: /workspace
