@@ -9,13 +9,16 @@ from .tools import build_toolset, execute_tool
 class Ctx:
     """Shared execution context passed to tools and loops."""
 
-    def __init__(self, config, shell, conversation, log, session, cancel_event):
+    def __init__(self, config, shell, conversation, log, session, cancel_event,
+                 bot=None, chat_id=None):
         self.config = config
         self.shell = shell
         self.conversation = conversation
         self.log = log
         self.session = session
         self.cancel_event = cancel_event
+        self.bot = bot          # aiogram Bot, for sending files back to the user
+        self.chat_id = chat_id  # chat to deliver files to
         self.run_subagent = None  # assigned after construction
 
 

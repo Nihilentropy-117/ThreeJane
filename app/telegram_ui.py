@@ -2,11 +2,13 @@ import asyncio
 import json
 
 from aiogram.exceptions import TelegramBadRequest, TelegramRetryAfter
+from aiogram.types import FSInputFile
 
 THINKING_HEADER = "🧠 Thinking…"
 CONT = "\n\n…(continued in next message)"
 PAGE_LIMIT = 4000
 RESULT_DISPLAY_CAP = 1500
+CAPTION_LIMIT = 1024  # Telegram caption max length
 
 
 # ---------------------------------------------------------------------------
@@ -96,6 +98,18 @@ async def safe_send(bot, chat_id, text):
     except TelegramRetryAfter as e:
         await asyncio.sleep(e.retry_after)
         return await bot.send_message(chat_id, text)
+
+
+async def send_document(bot, chat_id, path, caption=None):
+    """Send a local file to the chat as a document. A fresh FSInputFile is built per
+    attempt because the input stream is consumed on send."""
+    if caption and len(caption) > CAPTION_LIMIT:
+        caption = caption[:CAPTION_LIMIT - 1] + "…"
+    try:
+        return await bot.send_document(chat_id, FSInputFile(path), caption=caption)
+    except TelegramRetryAfter as e:
+        await asyncio.sleep(e.retry_after)
+        return await bot.send_document(chat_id, FSInputFile(path), caption=caption)
 
 
 async def safe_edit(bot, chat_id, message_id, text):
