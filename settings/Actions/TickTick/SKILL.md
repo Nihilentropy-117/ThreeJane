@@ -11,12 +11,15 @@ description: >
 
 ## Setup
 
-**Access token:** Read from `TICKTICK_ACCESS_TOKEN` environment variable. This is an
-OAuth2 access token for the TickTick Open API (<https://developer.ticktick.com>),
-minted once by authorizing the app and stored in `.env`.  
+**Credentials:** the script reads `TICKTICK_USERNAME` and `TICKTICK_PASSWORD` (a TickTick
+account login) from the environment, set in `.env`. It uses TickTick's v2 API via the
+`pyticktick` library, which sees **all** tasks — including the Inbox. The credentials are
+read from the environment only; the script never passes them as arguments or prints them,
+so they don't appear in the thinking log. The v2 session token is cached under
+`/workspace/.cache/ticktick.json` so it doesn't log in on every run. (If the account has
+2FA, also set `TICKTICK_TOTP_SECRET`.)  
 **Script:** `$SKILL_DIR/scripts/ticktick.py` (run with plain `python`).  
-**Dependencies:** `thefuzz` (pre-installed in the image). The script uses only the
-standard library otherwise.
+**Dependencies:** `pyticktick` and `thefuzz` (pre-installed in the image).
 
 ---
 
@@ -75,7 +78,7 @@ python $SKILL_DIR/scripts/ticktick.py add "Task title" \
 
 **Priority levels (TickTick's native scale):** 0 = none, 1 = low, 3 = medium, 5 = high.
 
-**Due dates:** TickTick's Open API takes a concrete date, not natural language. Pass an
+**Due dates:** TickTick's API takes a concrete date, not natural language. Pass an
 ISO date, `today`/`tomorrow`/`yesterday`, or a `+N`/`-N` day offset — the script resolves
 it from the clock. For **recurring** tasks ("every monday", "every 1st"), TickTick has no
 natural-language parser like Todoist; use `--repeat` with an RFC-5545 RRULE instead:
@@ -83,7 +86,8 @@ natural-language parser like Todoist; use `--repeat` with an RFC-5545 RRULE inst
 - "every day" → `--repeat "RRULE:FREQ=DAILY"`
 - "the 1st of each month" → `--due "every 1st"` is NOT valid; use `--repeat "RRULE:FREQ=MONTHLY;BYMONTHDAY=1"` (optionally with a `--due` start date).
 
-**Labels** map to TickTick **tags** (comma-separated).
+**Labels** map to TickTick **tags** (comma-separated). Tags must be single lowercase words —
+the script lowercases them, and silently skips any with spaces or special characters.
 
 **Project matching** is fuzzy — "shoping list" will match "Shopping List". If no project is specified, the task goes to Inbox.
 
@@ -99,7 +103,7 @@ natural-language parser like Todoist; use `--repeat` with an RFC-5545 RRULE inst
 
 ## Error handling
 
-- If `TICKTICK_ACCESS_TOKEN` is not set, the script exits with an error message. Tell the user to set the variable.
-- A `401`/`403` from the API means the token is missing, expired, or lacks scopes — tell the user to re-authorize and refresh `TICKTICK_ACCESS_TOKEN`.
+- If `TICKTICK_USERNAME` / `TICKTICK_PASSWORD` are not set, the script exits with an error message. Tell the user to set them.
+- A login/auth error (e.g. wrong password, or 2FA enabled without `TICKTICK_TOTP_SECRET`) surfaces as `Error: …` on stderr. A stale cached token is refreshed automatically; a persistent auth failure means the credentials need fixing.
 - If a project name doesn't match well enough (< 55% similarity), the task goes to Inbox with a warning. Tell the user which project you were looking for and that it defaulted to Inbox.
-- **Inbox search gap:** TickTick's Open API only lists named projects, so `search` does not see tasks sitting in the **Inbox**. Tasks can be *added* to the Inbox, but to find them later they need to live in a project. Mention this if a search comes up empty and the user expected an Inbox task.
+- Inbox tasks **are** fully searchable — the v2 API returns them like any other task.
