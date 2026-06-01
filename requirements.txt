@@ -7,3 +7,4 @@ pillow>=10
 pypdf>=4
 todoist-api-python>=3
 thefuzz>=0.22
+pyticktick>=0.3
