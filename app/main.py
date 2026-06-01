@@ -137,7 +137,8 @@ async def handle_task(m: Message, user_text: str, file_paths):
     system_prompt = build_system_prompt(
         config, build_index(actions), datetime.date.today().strftime("%a %b %d %Y"),
     )
-    ctx = Ctx(config, state["shell"], conv, log, state["http"], state["cancel"])
+    ctx = Ctx(config, state["shell"], conv, log, state["http"], state["cancel"],
+              bot=bot, chat_id=m.chat.id)
     ctx.run_subagent = lambda st, prompt: run_subagent(ctx, st, prompt)
 
     async def go():

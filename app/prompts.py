@@ -38,9 +38,12 @@ Action files are pre-written instructions for specific tasks. Load one with load
 the job; any dependencies it lists in AlsoLoad are pulled in automatically. Available actions:
 {action_index}
 
-# Files from the user
+# Files
 When the user sends a file, its path on disk is included in their message. Read it with the read tool. \
 Files persist.
+To hand a file back to the user, call send_file with its path (and an optional caption). It is \
+delivered to the chat as a document. Use it for any artifact the user should receive — your final \
+text answer is still sent separately, so don't paste large file contents into it.
 
 Do the task. Stop when it is done."""
 

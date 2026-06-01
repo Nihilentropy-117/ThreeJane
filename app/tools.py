@@ -6,6 +6,7 @@ import subprocess
 import tempfile
 
 from .actions import load_action
+from .telegram_ui import send_document
 
 # ---------------------------------------------------------------------------
 # Tool schemas (OpenAI function-calling format)
@@ -136,6 +137,26 @@ SCHEMAS = {
             },
         },
     },
+    "send_file": {
+        "type": "function",
+        "function": {
+            "name": "send_file",
+            "description": (
+                "Send a file from disk to the user in Telegram as a document, with an optional "
+                "caption. Use this to deliver artifacts you produced or files the user asked for — "
+                "images, PDFs, archives, code, anything. The file is sent as-is (not recompressed). "
+                "This is for handing over files; your final text answer is still delivered separately."
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "file_path": {"type": "string", "description": "Path of the file to send."},
+                    "caption": {"type": "string", "description": "Optional caption (max 1024 chars)."},
+                },
+                "required": ["file_path"],
+            },
+        },
+    },
     "load_action": {
         "type": "function",
         "function": {
@@ -154,7 +175,7 @@ SCHEMAS = {
 }
 
 SUBSETS = {
-    "main": ["bash", "read", "write", "edit", "glob", "grep", "task", "load_action"],
+    "main": ["bash", "read", "write", "edit", "glob", "grep", "send_file", "task", "load_action"],
     "explore": ["read", "glob", "grep"],
     "general": ["bash", "read", "write", "edit", "glob", "grep"],
     "web": [],  # web subagent uses the OpenRouter web plugin, no function tools
@@ -383,6 +404,25 @@ def tool_load_action(args, ctx):
     return text, []
 
 
+async def tool_send_file(args, ctx):
+    path = args["file_path"]
+    if ctx.bot is None or ctx.chat_id is None:
+        return "Error: no chat is available to send files to.", []
+    if not os.path.exists(path):
+        return f"Error: path does not exist: {path}", []
+    if os.path.isdir(path):
+        return f"Error: {path} is a directory, not a file.", []
+    caption = args.get("caption") or None
+    try:
+        await send_document(ctx.bot, ctx.chat_id, path, caption)
+    except Exception as e:
+        return f"Error sending file: {e}", []
+    size = os.path.getsize(path)
+    name = os.path.basename(path)
+    ctx.log.note(f"📤 Sent file: {name} ({size} bytes)")
+    return f"Sent {name} to the user ({size} bytes).", []
+
+
 async def tool_task(args, ctx):
     st = args["subagent_type"]
     prompt = args["prompt"]
@@ -422,6 +462,8 @@ async def execute_tool(name, args, ctx):
             return await asyncio.to_thread(tool_glob, args, ctx)
         if name == "grep":
             return await asyncio.to_thread(tool_grep, args, ctx)
+        if name == "send_file":
+            return await tool_send_file(args, ctx)
         if name == "load_action":
             return tool_load_action(args, ctx)
         if name == "task":

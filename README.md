@@ -9,8 +9,8 @@ clean final result as a separate message.
 
 - **The agent is the LLM.** A fixed main model drives an agentic loop: it calls tools, reads the
   results, and continues until it answers with no tool call. That final turn is the result.
-- **Tools:** `bash`, `read`, `write`, `edit`, `glob`, `grep`, `task`, `load_action`. The bash shell
-  is persistent (cwd/env/venv carry across calls). `read` before `edit` is enforced.
+- **Tools:** `bash`, `read`, `write`, `edit`, `glob`, `grep`, `send_file`, `task`, `load_action`. The
+  bash shell is persistent (cwd/env/venv carry across calls). `read` before `edit` is enforced.
 - **Subagents (`task`):** `explore` (read-only), `general` (full file + bash), `web` (live web
   search via the OpenRouter web plugin). Each uses its own, cheaper model and its own 25k-token
   window, runs one at a time, starts fresh, returns one message, and cannot spawn subagents.
@@ -18,7 +18,8 @@ clean final result as a separate message.
   Sliding window is 25k tokens for the main agent and for each subagent.
 - **Files:** files you send arrive on a volume shared with the local Bot API server (2 GB limit).
   The agent is given the path and reads it with `read`. Images are only seen when the agent reads
-  the image file; PDFs are text-extracted.
+  the image file; PDFs are text-extracted. The agent hands files back with `send_file`, which
+  delivers them to the chat as documents.
 - **Full root.** The agent may run anything and install anything in its container.
 
 ## Commands
@@ -67,5 +68,4 @@ edits take effect without a restart.
 
 ## Possible next steps
 
-- File send-back (let the agent return files to Telegram).
 - Startup validation of action files (circular `AlsoLoad`, missing keys).
